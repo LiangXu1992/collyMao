@@ -32,3 +32,26 @@ func (mggc *TableMaoGamesGoodsCount) Create() int64 {
 	var dbResult = orm.Gorm.Create(mggc)
 	return dbResult.RowsAffected
 }
+
+type TableMaoGamesGoods struct {
+	Id         int64
+	MaoGamesId int64 `gorm:"mao_games_id"`
+	GoodsId    int64 `gorm:"goods_id"`
+}
+
+func (t *TableMaoGamesGoods) TableName() string {
+	return "mao_games_goods"
+}
+
+type TableMaoGamesGoodsDetail struct {
+	Id              int64
+	MaoGamesGoodsId int64   `gorm:"mao_games_goods_id"`
+	CreateDatetime  string  `gorm:"create_datetime"`
+	Price           float64 `gorm:"price"`
+	GoodsCount      int64   `gorm:"goods_count"`
+	Title           string  `gorm:"title"`
+}
+
+func (t *TableMaoGamesGoodsDetail) TableName() string {
+	return "mao_games_goods_detail"
+}

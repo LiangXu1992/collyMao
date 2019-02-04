@@ -3,8 +3,10 @@ package Schedules
 import (
 	"collyMao/app/Models"
 	"collyMao/orm"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -67,6 +69,71 @@ func gameDetail(url, title *string) {
 
 }
 
+//获取游戏下每个商品的销量情况
+func InsertGoodsDetail() {
+	var maoGamesSlice = []Models.TableMaoGames{}
+	orm.Gorm.Find(&maoGamesSlice)
+	for _, maoGame := range maoGamesSlice {
+		if maoGame.Id != 687 {
+			continue
+		}
+		var c = colly.NewCollector()
+		c.OnHTML(`ul[class="list-con specialList"] > li`, func(h *colly.HTMLElement) {
+			var price, count, categoryId, title, goodsId string
+			h.DOM.Children().Each(func(a int, s *goquery.Selection) {
+				if attrV, _ := s.Attr("class"); attrV == "price" {
+					price = s.Text()
+					log.Println("price:" + price)
+				}
+				if attrV, _ := s.Attr("class"); attrV == "count" {
+					count = s.Text()
+					log.Println("count:" + count)
+				}
+				if attrV, _ := s.Attr("name"); attrV == "goodsbg" {
+					categoryId, _ = s.Attr("category-id")
+					log.Println("category-id:" + categoryId)
+
+				}
+				if attrV, _ := s.Attr("class"); attrV == "name" {
+					s.ChildrenFiltered("a").Each(func(a int, s *goquery.Selection) {
+						log.Println("title:" + s.Text())
+						title = s.Text()
+						//goodsId
+						var tmpHref, _ = s.Attr("href")
+						var valid = regexp.MustCompile(`[\d]{3,}`)
+						goodsId = valid.FindStringSubmatch(tmpHref)[0]
+						log.Println("goods_id:" + goodsId)
+					})
+				}
+			})
+			//商品存在
+			if price != "" && count != "" && title != "" && categoryId != "" && goodsId != "" {
+				var maoGameGoods = Models.TableMaoGamesGoods{}
+				orm.Gorm.Where("goods_id = ?", goodsId).First(&maoGameGoods)
+				if maoGameGoods.Id == 0 {
+					//create
+					maoGameGoods.GoodsId, _ = strconv.ParseInt(goodsId, 10, 64)
+					maoGameGoods.MaoGamesId = maoGame.Id
+					orm.Gorm.Create(&maoGameGoods)
+				}
+				var floatPrice, _ = strconv.ParseFloat(price, 64)
+				var IntCount, _ = strconv.ParseInt(count, 10, 64)
+				var maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{
+					MaoGamesGoodsId: maoGameGoods.Id,
+					CreateDatetime:  time.Now().Format("2006-01-02 15:04:05"),
+					Price:           floatPrice,
+					GoodsCount:      IntCount,
+					Title:           title,
+				}
+				orm.Gorm.Create(&maoGameGoodsDetail)
+			}
+		})
+		c.Visit(maoGame.Url)
+	}
+}
+
 func Start() {
-	go InsertGoodsCount()
+	//go InsertGoodsCount()
+	InsertGoodsDetail()
+
 }
