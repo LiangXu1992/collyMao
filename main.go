@@ -5,17 +5,12 @@ import (
 	"collyMao/config"
 	"collyMao/orm"
 	"log"
-	"net/http"
-	"os"
+	"time"
 )
 
 func init() {
 	log.SetFlags(log.Lshortfile | log.Ldate + log.Ltime)
-	var logFile, err = os.OpenFile("a.log", os.O_CREATE|os.O_RDWR, 0777)
-	if err != nil {
-		panic(err.Error())
-	}
-	log.SetOutput(logFile)
+
 }
 
 func main() {
@@ -26,5 +21,7 @@ func main() {
 	//定时任务
 	Schedules.Start()
 
-	http.ListenAndServe(":8888", nil)
+	for {
+		time.Sleep(time.Hour * 24)
+	}
 }

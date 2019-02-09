@@ -3,9 +3,10 @@ package Models
 import "collyMao/orm"
 
 type TableMaoGames struct {
-	Id    int64
-	Title string
-	Url   string
+	Id     int64
+	GameId int64 `gorm:"game_id"`
+	Title  string
+	Url    string
 }
 
 func (h *TableMaoGames) TableName() string {
@@ -34,9 +35,10 @@ func (mggc *TableMaoGamesGoodsCount) Create() int64 {
 }
 
 type TableMaoGamesGoods struct {
-	Id         int64
-	MaoGamesId int64 `gorm:"mao_games_id"`
-	GoodsId    int64 `gorm:"goods_id"`
+	Id      int64
+	GameId  int64  `gorm:"game_id"`
+	GoodsId int64  `gorm:"goods_id"`
+	Url     string `gorm:"url"`
 }
 
 func (t *TableMaoGamesGoods) TableName() string {
@@ -44,12 +46,12 @@ func (t *TableMaoGamesGoods) TableName() string {
 }
 
 type TableMaoGamesGoodsDetail struct {
-	Id              int64
-	MaoGamesGoodsId int64   `gorm:"mao_games_goods_id"`
-	CreateDatetime  string  `gorm:"create_datetime"`
-	Price           float64 `gorm:"price"`
-	GoodsCount      int64   `gorm:"goods_count"`
-	Title           string  `gorm:"title"`
+	Id             int64
+	CreateDatetime string  `gorm:"create_datetime"`
+	Price          float64 `gorm:"price"`
+	GoodsCount     int64   `gorm:"goods_count"`
+	Title          string  `gorm:"title"`
+	GoodsId        int64   `gorm:"goods_id"`
 }
 
 func (t *TableMaoGamesGoodsDetail) TableName() string {

@@ -27,7 +27,7 @@ func Start() {
 		return
 	}
 	DbClient = Gorm.DB()
-	Gorm.LogMode(c.Mysql.Logdebug)
+	//Gorm.LogMode(c.Mysql.Logdebug)
 	DbClient.SetMaxOpenConns(c.Mysql.MaxActive) //用于设置最大打开的连接数，默认值为0表示不限制。
 	DbClient.SetMaxIdleConns(c.Mysql.MaxIdle)   //最大空闲数
 	DbClient.Ping()
