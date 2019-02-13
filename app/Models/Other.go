@@ -57,3 +57,18 @@ type TableMaoGamesGoodsDetail struct {
 func (t *TableMaoGamesGoodsDetail) TableName() string {
 	return "mao_games_goods_detail"
 }
+
+type TableMaoGamesStc struct {
+	Id              int64
+	SaleCount       int64
+	GoodsTotalCount int64
+	Stc             float64
+	Title           string
+	Url             string
+	GameId          int64
+	CreateDatetime  string `gorm:"create_datetime"`
+}
+
+func (t *TableMaoGamesStc) TableName() string {
+	return "mao_games_stc"
+}

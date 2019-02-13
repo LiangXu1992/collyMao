@@ -15,18 +15,23 @@ import (
 
 func InsertGoodsCount() {
 	for {
+		for {
+			time.Sleep(time.Second * 10)
+			if time.Now().Format("04") == "00" {
+				break
+			}
+		}
 		c := colly.NewCollector()
 		c.OnHTML("a[href]", func(h *colly.HTMLElement) {
 			var tmpHref = h.Attr("href")
 			var tmpTitle = h.Attr("title")
 			if strings.Contains(tmpHref, "-c12") == true && strings.Contains(tmpTitle, "苹果") == true {
 				gameDetail(&tmpHref, &tmpTitle)
+				time.Sleep(time.Second * 1)
 			}
 		})
 
 		c.Visit("https://www.jiaoyimao.com/youxi/")
-
-		time.Sleep(time.Hour * 24)
 	}
 }
 
@@ -68,7 +73,6 @@ func gameDetail(url, title *string) {
 		}
 	})
 	c.Visit(*url)
-
 }
 
 //获取游戏下每个商品的销量情况
@@ -149,12 +153,54 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 			}
 		})
 	}
-	log.Println(url)
+
 	time.Sleep(time.Second * time.Duration(rand.Int63n(3)))
 	c.Visit(url)
 }
 
+//统计游戏销量比例
+func InsertGameSaleDetail() {
+	for {
+		for {
+			time.Sleep(time.Second * 10)
+			if time.Now().Format("04") == "55" {
+				break
+			}
+		}
+		//查出数据
+		rows, err := orm.DbClient.Query(`select
+       count(*) as sc,mao_games_goods_count.goods_count as tc, count(*)/mao_games_goods_count.goods_count  as stc, mao_games.title,mao_games.url,mao_games.game_id
+from mao_games
+       inner join mao_games_goods on mao_games_goods.game_id = mao_games.game_id
+       inner join mao_games_goods_detail on mao_games_goods_detail.goods_id = mao_games_goods.goods_id
+       inner join mao_games_goods_count on mao_games_goods_count.game_id = mao_games.game_id and mao_games_goods_count.create_date = CURRENT_DATE()
+where mao_games_goods_detail.goods_id in (select goods_id from mao_games_goods_detail as c where c.goods_count < 100 and c.price > 5.00 AND c.create_datetime >= CURRENT_DATE() and c.create_datetime < DATE_SUB(curdate(),INTERVAL -1 DAY) group by c.goods_id having count(*) >= 1)
+and mao_games_goods_detail.goods_count < 100 and mao_games_goods_detail.price > 5.00 AND mao_games_goods_detail.create_datetime >= CURRENT_DATE() and mao_games_goods_detail.create_datetime < DATE_SUB(curdate(),INTERVAL -1 DAY)
+group by mao_games.game_id
+order by stc desc
+`)
+		defer rows.Close()
+		if err != nil {
+			log.Println("select stc err")
+			break
+		}
+		for rows.Next() {
+			var maoGamesStc Models.TableMaoGamesStc
+			err = rows.Scan(&maoGamesStc.SaleCount, &maoGamesStc.GoodsTotalCount, &maoGamesStc.Stc, &maoGamesStc.Title, &maoGamesStc.Url, &maoGamesStc.GameId)
+			if err != nil {
+				log.Println("stc row scan err")
+				break
+			}
+			maoGamesStc.CreateDatetime = time.Now().Add(time.Hour * 1).Format("2006-01-02 15:00:00")
+			orm.Gorm.Create(&maoGamesStc)
+		}
+		time.Sleep(time.Minute * 2)
+	}
+}
+
 func Start() {
+	go InsertGameSaleDetail()
 	go InsertGoodsCount()
 	go InsertGoodsDetail()
+
 }
