@@ -27,7 +27,7 @@ func InsertGoodsCount() {
 			var tmpTitle = h.Attr("title")
 			if strings.Contains(tmpHref, "-c12") == true && strings.Contains(tmpTitle, "苹果") == true {
 				gameDetail(&tmpHref, &tmpTitle)
-				time.Sleep(time.Second * 1)
+				time.Sleep(time.Second * 5)
 			}
 		})
 
@@ -42,7 +42,7 @@ func gameDetail(url, title *string) {
 		var err error
 		if goodsCountInt, err = strconv.ParseInt(h.Text, 10, 64); err != nil {
 			log.Println("xxxxxx")
-			panic("aaa")
+			return
 		}
 		if goodsCountInt == 0 {
 			return
@@ -82,7 +82,7 @@ func InsertGoodsDetail() {
 		orm.Gorm.Find(&maoGamesSlice)
 		for _, maoGame := range maoGamesSlice {
 			collyGoodsDetail(maoGame.Url, maoGame.GameId, true)
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Millisecond * 300)
 		}
 		time.Sleep(time.Second * 10)
 	}
@@ -154,7 +154,7 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 		})
 	}
 
-	time.Sleep(time.Second * time.Duration(rand.Int63n(3)))
+	time.Sleep(time.Millisecond * time.Duration(rand.Int63n(300)))
 	c.Visit(url)
 }
 
