@@ -125,13 +125,13 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 			}
 			//计算商品数量有无变化
 			var maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{}
-			orm.Gorm.Where("goods_id = ? and goods_count = ?", goodsId, count).Last(&maoGameGoodsDetail)
-			if maoGameGoodsDetail.Id != 0 {
+			orm.Gorm.Where("goods_id = ?", goodsId).Last(&maoGameGoodsDetail)
+			var IntCount, _ = strconv.ParseInt(count, 10, 64)
+			if maoGameGoodsDetail.GoodsCount == IntCount {
 				//无变化
 				return
 			}
 			var floatPrice, _ = strconv.ParseFloat(price, 64)
-			var IntCount, _ = strconv.ParseInt(count, 10, 64)
 			maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{
 				CreateDatetime: time.Now().Format("2006-01-02 15:04:05"),
 				Price:          floatPrice,
