@@ -131,15 +131,35 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 				//无变化
 				return
 			}
-			var floatPrice, _ = strconv.ParseFloat(price, 64)
-			maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{
-				CreateDatetime: time.Now().Format("2006-01-02 15:04:05"),
-				Price:          floatPrice,
-				GoodsCount:     IntCount,
-				Title:          title,
-				GoodsId:        maoGameGoods.GoodsId,
+			//数量发生了变化
+			//1.变化的数量只有一个
+			if maoGameGoodsDetail.GoodsCount-IntCount == 1 {
+				var floatPrice, _ = strconv.ParseFloat(price, 64)
+				maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{
+					CreateDatetime: time.Now().Format("2006-01-02 15:04:05"),
+					Price:          floatPrice,
+					GoodsCount:     IntCount,
+					Title:          title,
+					GoodsId:        maoGameGoods.GoodsId,
+				}
+				orm.Gorm.Create(&maoGameGoodsDetail)
 			}
-			orm.Gorm.Create(&maoGameGoodsDetail)
+			//1.变化的数量不只一个
+			if maoGameGoodsDetail.GoodsCount-IntCount > 1 {
+				var saleCount = maoGameGoodsDetail.GoodsCount - IntCount
+				var i int64 = 0
+				for i = 1; i <= saleCount; i++ {
+					var floatPrice, _ = strconv.ParseFloat(price, 64)
+					maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{
+						CreateDatetime: time.Now().Format("2006-01-02 15:04:05"),
+						Price:          floatPrice,
+						GoodsCount:     maoGameGoodsDetail.GoodsCount - i,
+						Title:          title,
+						GoodsId:        maoGameGoods.GoodsId,
+					}
+					orm.Gorm.Create(&maoGameGoodsDetail)
+				}
+			}
 		}
 	})
 
