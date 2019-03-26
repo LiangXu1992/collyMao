@@ -147,13 +147,14 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 			//1.变化的数量不只一个
 			if maoGameGoodsDetail.GoodsCount-IntCount > 1 {
 				var saleCount = maoGameGoodsDetail.GoodsCount - IntCount
+				var oldGoodsCount = maoGameGoodsDetail.GoodsCount
 				var i int64 = 0
 				for i = 1; i <= saleCount; i++ {
 					var floatPrice, _ = strconv.ParseFloat(price, 64)
 					maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{
-						CreateDatetime: time.Now().Format("2006-01-02 15:04:05"),
+						CreateDatetime: time.Now().Add(time.Second * time.Duration(i)).Format("2006-01-02 15:04:05"),
 						Price:          floatPrice,
-						GoodsCount:     maoGameGoodsDetail.GoodsCount - i,
+						GoodsCount:     oldGoodsCount - i,
 						Title:          title,
 						GoodsId:        maoGameGoods.GoodsId,
 					}
