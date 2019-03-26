@@ -81,8 +81,10 @@ func InsertGoodsDetail() {
 		var maoGamesSlice = []Models.TableMaoGames{}
 		orm.Gorm.Find(&maoGamesSlice)
 		for _, maoGame := range maoGamesSlice {
-			collyGoodsDetail(maoGame.Url, maoGame.GameId, true)
-			time.Sleep(time.Millisecond * 300)
+			if maoGame.GameId == 6378 {
+				collyGoodsDetail(maoGame.Url, maoGame.GameId, true)
+				time.Sleep(time.Millisecond * 300)
+			}
 		}
 		time.Sleep(time.Second * 10)
 	}
@@ -112,6 +114,7 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 				})
 			}
 		})
+
 		//商品存在
 		if price != "" && count != "" && title != "" && categoryId != "" && goodsId != "" {
 			var maoGameGoods = Models.TableMaoGamesGoods{}
@@ -127,6 +130,11 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 			var maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{}
 			orm.Gorm.Where("goods_id = ?", goodsId).Last(&maoGameGoodsDetail)
 			var IntCount, _ = strconv.ParseInt(count, 10, 64)
+			var floatPrice, _ = strconv.ParseFloat(price, 64)
+
+			if maoGameGoodsDetail.GoodsId == 1552370843783436 {
+				log.Println("a")
+			}
 			if maoGameGoodsDetail.GoodsCount == IntCount {
 				//无变化
 				return
@@ -134,7 +142,6 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 			//数量发生了变化
 			//1.变化的数量只有一个
 			if maoGameGoodsDetail.GoodsCount-IntCount == 1 {
-				var floatPrice, _ = strconv.ParseFloat(price, 64)
 				maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{
 					CreateDatetime: time.Now().Format("2006-01-02 15:04:05"),
 					Price:          floatPrice,
@@ -144,7 +151,7 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 				}
 				orm.Gorm.Create(&maoGameGoodsDetail)
 			}
-			//1.变化的数量不只一个
+			//2.变化的数量不只一个
 			if maoGameGoodsDetail.GoodsCount-IntCount > 1 {
 				var saleCount = maoGameGoodsDetail.GoodsCount - IntCount
 				var oldGoodsCount = maoGameGoodsDetail.GoodsCount
@@ -161,16 +168,32 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 					orm.Gorm.Create(&maoGameGoodsDetail)
 				}
 			}
+
+			//3.新的商品数量大于最新的一条记录的数量，所以是商家补货，所以更新最后一条记录的数据就ok
+			if maoGameGoodsDetail.GoodsCount-IntCount < 1 {
+				maoGameGoodsDetail.GoodsCount = IntCount
+				maoGameGoodsDetail.Title = title
+				maoGameGoodsDetail.Price = floatPrice
+				maoGameGoodsDetail.CreateDatetime = time.Now().Format("2006-01-02 15:04:05")
+				orm.Gorm.Save(&maoGameGoodsDetail)
+			}
 		}
 	})
 
 	if deepVists == true {
 		c.OnHTML(`span[class=page-count] > a`, func(h *colly.HTMLElement) {
-			if intPage, _ := strconv.ParseInt(h.Text, 10, 64); intPage <= 5 {
+			if intPage, _ := strconv.ParseInt(h.Text, 10, 64); intPage <= deepVisitsPage {
 				if intPage == 1 {
 					return
 				}
-				collyGoodsDetail(h.Attr("href"), gameId, false)
+
+				log.Println(h.Attr("href"))
+				if intPage == 5 {
+					collyGoodsDetail(h.Attr("href"), gameId, true)
+				} else {
+					collyGoodsDetail(h.Attr("href"), gameId, false)
+				}
+
 			}
 		})
 	}
@@ -218,6 +241,8 @@ order by stc desc
 		time.Sleep(time.Minute * 2)
 	}
 }
+
+var deepVisitsPage int64 = 10
 
 func Start() {
 	go InsertGameSaleDetail()
