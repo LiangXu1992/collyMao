@@ -81,10 +81,8 @@ func InsertGoodsDetail() {
 		var maoGamesSlice = []Models.TableMaoGames{}
 		orm.Gorm.Find(&maoGamesSlice)
 		for _, maoGame := range maoGamesSlice {
-			if maoGame.GameId == 6378 {
-				collyGoodsDetail(maoGame.Url, maoGame.GameId, true)
-				time.Sleep(time.Millisecond * 300)
-			}
+			collyGoodsDetail(maoGame.Url, maoGame.GameId, true)
+			time.Sleep(time.Millisecond * 300)
 		}
 		time.Sleep(time.Second * 10)
 	}
@@ -186,14 +184,16 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 				if intPage == 1 {
 					return
 				}
-
+				if intPage <= currentVisitPage {
+					return
+				}
+				currentVisitPage = intPage
 				log.Println(h.Attr("href"))
 				if intPage == 5 {
 					collyGoodsDetail(h.Attr("href"), gameId, true)
 				} else {
 					collyGoodsDetail(h.Attr("href"), gameId, false)
 				}
-
 			}
 		})
 	}
@@ -242,7 +242,8 @@ order by stc desc
 	}
 }
 
-var deepVisitsPage int64 = 10
+var deepVisitsPage int64 = 10  //搜集多少页的数据
+var currentVisitPage int64 = 1 //当前在第几页访问
 
 func Start() {
 	go InsertGameSaleDetail()
