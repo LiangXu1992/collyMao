@@ -125,16 +125,15 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 				orm.Gorm.Create(&maoGameGoods)
 			}
 			//计算商品数量有无变化
+			//找出当前商品最近一条的记录
 			var maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{}
 			orm.Gorm.Where("goods_id = ?", goodsId).Last(&maoGameGoodsDetail)
+			//当前商品的数量
 			var IntCount, _ = strconv.ParseInt(count, 10, 64)
+			//当前商品的价格
 			var floatPrice, _ = strconv.ParseFloat(price, 64)
-
-			if maoGameGoodsDetail.GoodsId == 1552370843783436 {
-				log.Println("a")
-			}
+			//1.//无变化,不处理直接返回
 			if maoGameGoodsDetail.GoodsCount == IntCount {
-				//无变化
 				return
 			}
 			//数量发生了变化
@@ -188,7 +187,6 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 					return
 				}
 				currentVisitPage = intPage
-				log.Println(h.Attr("href"))
 				if intPage == 5 {
 					collyGoodsDetail(h.Attr("href"), gameId, true)
 				} else {
