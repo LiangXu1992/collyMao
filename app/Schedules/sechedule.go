@@ -147,6 +147,7 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 					GoodsId:        maoGameGoods.GoodsId,
 				}
 				orm.Gorm.Create(&maoGameGoodsDetail)
+				return
 			}
 			//2.变化的数量不只一个
 			if maoGameGoodsDetail.GoodsCount-IntCount > 1 {
@@ -164,6 +165,7 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 					}
 					orm.Gorm.Create(&maoGameGoodsDetail)
 				}
+				return
 			}
 
 			//3.新的商品数量大于最新的一条记录的数量，所以是商家补货，所以更新最后一条记录的数据就ok
@@ -173,6 +175,7 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 				maoGameGoodsDetail.Price = floatPrice
 				maoGameGoodsDetail.CreateDatetime = time.Now().Format("2006-01-02 15:04:05")
 				orm.Gorm.Save(&maoGameGoodsDetail)
+				return
 			}
 		}
 	})
