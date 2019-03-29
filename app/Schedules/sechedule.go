@@ -81,6 +81,8 @@ func InsertGoodsDetail() {
 		var maoGamesSlice = []Models.TableMaoGames{}
 		orm.Gorm.Find(&maoGamesSlice)
 		for _, maoGame := range maoGamesSlice {
+			log.Printf("CurrentMaoGame:%+v", maoGame)
+			currentVisitPage = 1
 			collyGoodsDetail(maoGame.Url, maoGame.GameId, true)
 			time.Sleep(time.Millisecond * 300)
 		}
@@ -200,7 +202,12 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 	}
 
 	time.Sleep(time.Millisecond * time.Duration(rand.Int63n(300)))
-	c.Visit(url)
+	log.Println(url)
+	var err = c.Visit(url)
+	if err != nil {
+		log.Println("collyGoodsDetail visit url err:" + err.Error())
+		return
+	}
 }
 
 //统计游戏销量比例
