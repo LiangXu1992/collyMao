@@ -134,6 +134,18 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 			var IntCount, _ = strconv.ParseInt(count, 10, 64)
 			//当前商品的价格
 			var floatPrice, _ = strconv.ParseFloat(price, 64)
+			//商品不存在于数据库
+			if maoGameGoodsDetail.Id == 0 {
+				maoGameGoodsDetail = Models.TableMaoGamesGoodsDetail{
+					CreateDatetime: time.Now().Format("2006-01-02 15:04:05"),
+					Price:          floatPrice,
+					GoodsCount:     IntCount,
+					Title:          title,
+					GoodsId:        maoGameGoods.GoodsId,
+				}
+				orm.Gorm.Create(&maoGameGoodsDetail)
+				return
+			}
 			//1.//无变化,不处理直接返回
 			if maoGameGoodsDetail.GoodsCount == IntCount {
 				return
