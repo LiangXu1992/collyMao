@@ -238,8 +238,8 @@ from mao_games
        inner join mao_games_goods on mao_games_goods.game_id = mao_games.game_id
        inner join mao_games_goods_detail on mao_games_goods_detail.goods_id = mao_games_goods.goods_id
        inner join mao_games_goods_count on mao_games_goods_count.game_id = mao_games.game_id and mao_games_goods_count.create_date = CURRENT_DATE()
-where mao_games_goods_detail.goods_id in (select goods_id from mao_games_goods_detail as c where c.goods_count < 100 and c.price > 5.00 AND c.create_datetime >= CURRENT_DATE() and c.create_datetime < DATE_SUB(curdate(),INTERVAL -1 DAY) group by c.goods_id having count(*) >= 1)
-and mao_games_goods_detail.goods_count < 100 and mao_games_goods_detail.price > 5.00 AND mao_games_goods_detail.create_datetime >= CURRENT_DATE() and mao_games_goods_detail.create_datetime < DATE_SUB(curdate(),INTERVAL -1 DAY)
+where mao_games_goods_detail.goods_id in (select goods_id from mao_games_goods_detail as c where c.goods_count < 100 and c.price >= 3.00 AND c.create_datetime >= CURRENT_DATE() and c.create_datetime < DATE_SUB(curdate(),INTERVAL -1 DAY) group by c.goods_id having count(*) >= 1)
+and mao_games_goods_detail.goods_count < 100 and mao_games_goods_detail.price >= 3.00 AND mao_games_goods_detail.create_datetime >= CURRENT_DATE() and mao_games_goods_detail.create_datetime < DATE_SUB(curdate(),INTERVAL -1 DAY)
 group by mao_games.game_id
 order by stc desc
 `)
