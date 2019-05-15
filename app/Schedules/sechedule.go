@@ -315,5 +315,8 @@ var deepVisitsPage int64 = 10  //搜集多少页的数据
 var currentVisitPage int64 = 1 //当前在第几页访问
 
 func Start() {
+	go InsertGameSaleDetail()
+	go InsertGoodsCount()
+	go InsertGoodsDetail()
 	go GoodsRank()
 }
