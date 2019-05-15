@@ -262,12 +262,72 @@ order by stc desc
 	}
 }
 
+type TableGoodsRank struct {
+	Id         int64
+	Title      string
+	CreateTime int64
+	GoodsId    int64
+	Idx        int
+}
+
+type TableTest struct {
+	St string
+}
+
+// 查看商品排位
+func GoodsRank() {
+	orm.Gorm.Table("goods_rank").Delete("1=1")
+	log.Println(a)
+	for {
+		var c = colly.NewCollector()
+		c.OnHTML(`ul[id="goodsList"] > li`, func(h *colly.HTMLElement) {
+			if strings.Contains(h.Text, "代充") == true {
+				//return
+			}
+			var valid = regexp.MustCompile(`[\d]+`)
+			goodsId, _ := strconv.ParseInt(valid.FindString(h.Attr("id")), 10, 64)
+
+			if *a >= 2 {
+				//后续执行
+				if h.Index == 0 {
+					var d TableGoodsRank
+					orm.Gorm.Table("goods_rank").Where("idx = ?", h.Index).First(&d)
+					if d.GoodsId == goodsId {
+						//无变化
+					} else {
+						//有变化
+						*a = 1
+						var insertData = TableGoodsRank{
+							Title:      h.ChildAttr("a", "title"),
+							CreateTime: time.Now().Unix(),
+							GoodsId:    goodsId,
+							Idx:        h.Index,
+						}
+						orm.Gorm.Table("goods_rank").Create(&insertData)
+					}
+				}
+			} else {
+				var insertData = TableGoodsRank{
+					Title:      h.ChildAttr("a", "title"),
+					CreateTime: time.Now().Unix(),
+					GoodsId:    goodsId,
+					Idx:        h.Index,
+				}
+				orm.Gorm.Table("goods_rank").Create(&insertData)
+			}
+		})
+		c.Visit("https://m.jiaoyimao.com/g6587/")
+		time.Sleep(time.Second * 2)
+		log.Println("sleep")
+		*a = *a + 1
+	}
+}
+
+var b int64 = 1
+var a *int64 = &b
 var deepVisitsPage int64 = 10  //搜集多少页的数据
 var currentVisitPage int64 = 1 //当前在第几页访问
 
 func Start() {
-	go InsertGameSaleDetail()
-	go InsertGoodsCount()
-	go InsertGoodsDetail()
-
+	go GoodsRank()
 }
