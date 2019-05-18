@@ -21,7 +21,8 @@ var c = config.Config
 
 func Start() {
 	//mysql连接池
-	Gorm, err = gorm.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", c.Mysql.User, c.Mysql.Password, c.Mysql.Host, c.Mysql.Port, c.Mysql.Database))
+	a := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", c.Mysql.User, c.Mysql.Password, c.Mysql.Host, c.Mysql.Port, c.Mysql.Database)
+	Gorm, err = gorm.Open("mysql", a)
 	if err != nil {
 		log.Println("connect mysql err:" + err.Error())
 		return

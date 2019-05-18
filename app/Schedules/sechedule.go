@@ -268,6 +268,7 @@ type TableGoodsRank struct {
 	CreateTime int64
 	GoodsId    int64
 	Idx        int
+	GameId     int64
 }
 
 type TableTest struct {
@@ -275,39 +276,59 @@ type TableTest struct {
 }
 
 // 查看商品排位
-func GoodsRank() {
-	//orm.Gorm.Table("goods_rank").Delete("1=1")
-	for {
-		var c = colly.NewCollector()
-		c.OnHTML(`ul[id="goodsList"] > li`, func(h *colly.HTMLElement) {
-			if strings.Contains(h.Text, "代充") == true {
-				//return
-			}
-			var valid = regexp.MustCompile(`[\d]+`)
-			goodsId, _ := strconv.ParseInt(valid.FindString(h.Attr("id")), 10, 64)
+func GoodsRank(gameId int64) {
+	var c = colly.NewCollector()
+	c.OnHTML(`ul[id="goodsList"] > li`, func(h *colly.HTMLElement) {
+		if strings.Contains(h.Text, "代充") == true {
+			//return
+		}
+		var valid = regexp.MustCompile(`[\d]+`)
+		goodsId, _ := strconv.ParseInt(valid.FindString(h.Attr("id")), 10, 64)
 
-			if h.Index == 0 {
-				var d TableGoodsRank
-				orm.Gorm.Table("goods_rank").Where("idx = ?", h.Index).Last(&d)
-				if d.GoodsId == goodsId {
-					//无变化
-					log.Println(h.ChildAttr("a", "title"))
-				} else {
-					//有变化
-					var insertData = TableGoodsRank{
-						Title:      h.ChildAttr("a", "title"),
-						CreateTime: time.Now().Unix(),
-						GoodsId:    goodsId,
-						Idx:        h.Index,
-					}
-					log.Println("bbbbbbb")
-					log.Println(h.ChildAttr("a", "title"))
-					orm.Gorm.Table("goods_rank").Create(&insertData)
+		if h.Index == 0 {
+			var d TableGoodsRank
+			orm.Gorm.Table("goods_rank").Where("idx = ? and game_id = ?", h.Index, gameId).Last(&d)
+
+			if d.Id == 0 {
+				//创建记录
+				var insertData = TableGoodsRank{
+					Title:      h.ChildAttr("a", "title"),
+					CreateTime: time.Now().Unix(),
+					GoodsId:    goodsId,
+					Idx:        h.Index,
+					GameId:     gameId,
 				}
+				orm.Gorm.Table("goods_rank").Create(&insertData)
+				return
 			}
-		})
-		c.Visit("https://m.jiaoyimao.com/g6587/")
-		time.Sleep(time.Millisecond * 300)
+			if d.GoodsId == goodsId {
+				//无变化
+				log.Println(h.ChildAttr("a", "title"))
+			} else {
+				var updateData = map[string]interface{}{
+					"create_time": time.Now().Unix(),
+					"title":       h.ChildAttr("a", "title"),
+					"goods_id":    goodsId,
+				}
+				orm.Gorm.Table("goods_rank").Where("idx = ? and game_id = ?", h.Index, gameId).Update(updateData)
+			}
+		}
+	})
+	_ = c.Visit("https://m.jiaoyimao.com/g" + strconv.FormatInt(gameId, 10) + "/")
+	time.Sleep(time.Millisecond * 100)
+}
+
+func allGameGoodsRank() {
+	var gameSlice = []int64{
+		6587,
+		7426,
+		8890,
+		6378,
+	}
+	for {
+		for _, v := range gameSlice {
+			GoodsRank(v)
+		}
 	}
 }
 
@@ -318,5 +339,5 @@ func Start() {
 	go InsertGameSaleDetail()
 	go InsertGoodsCount()
 	go InsertGoodsDetail()
-	go GoodsRank()
+	go allGameGoodsRank()
 }
