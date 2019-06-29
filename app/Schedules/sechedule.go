@@ -119,11 +119,15 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 		if price != "" && count != "" && title != "" && categoryId != "" && goodsId != "" {
 			var maoGameGoods = Models.TableMaoGamesGoods{}
 			orm.Gorm.Where("goods_id = ?", goodsId).First(&maoGameGoods)
+			//获取游戏的店主信息
+			var sellerName, sellerType = getSellerName(goodsUrl)
 			if maoGameGoods.Id == 0 {
 				//create
 				maoGameGoods.GoodsId, _ = strconv.ParseInt(goodsId, 10, 64)
 				maoGameGoods.GameId = gameId
 				maoGameGoods.Url = goodsUrl
+				maoGameGoods.SellerName = sellerName
+				maoGameGoods.SellerType = sellerType
 				orm.Gorm.Create(&maoGameGoods)
 			}
 			//计算商品数量有无变化
@@ -321,8 +325,6 @@ func GoodsRank(gameId int64) {
 func allGameGoodsRank() {
 	var gameSlice = []int64{
 		6587,
-		7426,
-		8890,
 		6378,
 	}
 	for {
@@ -330,6 +332,35 @@ func allGameGoodsRank() {
 			GoodsRank(v)
 		}
 	}
+}
+
+//查找店家的id
+func getSellerName(goodsUrl string) (sellerName string, sellerType int64) {
+	var c = colly.NewCollector()
+	c.OnHTML(`div[class="shop-info-card clearfix"] > a`, func(h *colly.HTMLElement) {
+		//店铺卖家
+		sellerName = "errorShop"
+		sellerType = 1
+		var reg = regexp.MustCompile(`(com\/)(.*)(\?)`)
+		if len(reg.FindAllStringSubmatch(h.Attr("href"), -1)) >= 1 {
+			if len(reg.FindAllStringSubmatch(h.Attr("href"), -1)) >= 4 {
+				sellerName = reg.FindAllStringSubmatch(h.Attr("href"), -1)[0][2]
+				sellerType = 1
+			}
+		}
+	})
+	c.OnHTML(`div[class="shop-info-card shop-personal-card clearfix"] > a`, func(h *colly.HTMLElement) {
+		//个人卖家
+		sellerName = "errorPerson"
+		sellerType = 2
+		var reg = regexp.MustCompile(`[\d]+`)
+		if len(reg.FindAllString(h.Attr("href"), -1)) >= 1 {
+			sellerName = reg.FindAllString(h.Attr("href"), -1)[0]
+			sellerType = 2
+		}
+	})
+	c.Visit(strings.Replace(goodsUrl, "https://www.", "https://m.", 1))
+	return
 }
 
 var deepVisitsPage int64 = 10  //搜集多少页的数据

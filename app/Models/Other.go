@@ -35,10 +35,12 @@ func (mggc *TableMaoGamesGoodsCount) Create() int64 {
 }
 
 type TableMaoGamesGoods struct {
-	Id      int64
-	GameId  int64  `gorm:"game_id"`
-	GoodsId int64  `gorm:"goods_id"`
-	Url     string `gorm:"url"`
+	Id         int64
+	GameId     int64  `gorm:"game_id"`
+	GoodsId    int64  `gorm:"goods_id"`
+	Url        string `gorm:"url"`
+	SellerName string
+	SellerType int64
 }
 
 func (t *TableMaoGamesGoods) TableName() string {
