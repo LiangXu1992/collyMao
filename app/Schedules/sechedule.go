@@ -343,7 +343,7 @@ func getSellerName(goodsUrl string) (sellerName string, sellerType int64) {
 		sellerType = 1
 		var reg = regexp.MustCompile(`(com\/)(.*)(\?)`)
 		if len(reg.FindAllStringSubmatch(h.Attr("href"), -1)) >= 1 {
-			if len(reg.FindAllStringSubmatch(h.Attr("href"), -1)) >= 4 {
+			if len(reg.FindAllStringSubmatch(h.Attr("href"), -1)[0]) >= 4 {
 				sellerName = reg.FindAllStringSubmatch(h.Attr("href"), -1)[0][2]
 				sellerType = 1
 			}
