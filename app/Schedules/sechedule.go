@@ -305,10 +305,7 @@ func GoodsRank(gameId int64) {
 				orm.Gorm.Table("goods_rank").Create(&insertData)
 				return
 			}
-			if d.GoodsId == goodsId {
-				//无变化
-				log.Println(h.ChildAttr("a", "title"))
-			} else {
+			if d.GoodsId != goodsId {
 				var updateData = map[string]interface{}{
 					"create_time": time.Now().Unix(),
 					"title":       h.ChildAttr("a", "title"),
