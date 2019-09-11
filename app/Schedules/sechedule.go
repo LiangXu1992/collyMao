@@ -84,14 +84,14 @@ func InsertGoodsDetail() {
 		for _, maoGame := range maoGamesSlice {
 			log.Printf("CurrentMaoGame:%+v", maoGame)
 			currentVisitPage = 1
-			collyGoodsDetail(maoGame.Url, maoGame.GameId, true)
+			collyGoodsDetail(maoGame.Url, maoGame.GameId, true, maoGame.Title)
 			time.Sleep(time.Millisecond * 300)
 		}
 		time.Sleep(time.Second * 10)
 	}
 }
 
-func collyGoodsDetail(url string, gameId int64, deepVists bool) {
+func collyGoodsDetail(url string, gameId int64, deepVists bool, gameTitle string) {
 	var c = colly.NewCollector()
 	c.OnHTML(`ul[class="list-con specialList"] > li`, func(h *colly.HTMLElement) {
 		var price, count, categoryId, title, goodsId, goodsUrl string
@@ -210,16 +210,16 @@ func collyGoodsDetail(url string, gameId int64, deepVists bool) {
 				}
 				currentVisitPage = intPage
 				if intPage == 5 {
-					collyGoodsDetail(h.Attr("href"), gameId, true)
+					collyGoodsDetail(h.Attr("href"), gameId, true, gameTitle)
 				} else {
-					collyGoodsDetail(h.Attr("href"), gameId, false)
+					collyGoodsDetail(h.Attr("href"), gameId, false, gameTitle)
 				}
 			}
 		})
 	}
 
 	time.Sleep(time.Millisecond * time.Duration(rand.Int63n(300)))
-	log.Println(url)
+	log.Printf("gameName:%s;currentUrl:%s", gameTitle, url)
 	var err = c.Visit(url)
 	if err != nil {
 		log.Println("collyGoodsDetail visit url err:" + err.Error())
