@@ -25,13 +25,14 @@ func InsertGoodsCount() {
 		c.OnHTML("a[href]", func(h *colly.HTMLElement) {
 			var tmpHref = h.Attr("href")
 			var tmpTitle = h.Attr("title")
-			if strings.Contains(tmpHref, "-c12") == true && strings.Contains(tmpTitle, "苹果") == true {
+			//if strings.Contains(tmpHref, "-c12") == true && strings.Contains(tmpTitle, "苹果") == true {
+			if strings.Contains(tmpHref, "-c12") == true {
 				gameDetail(&tmpHref, &tmpTitle)
 				time.Sleep(time.Second * 5)
 			}
 		})
 
-		c.Visit("https://www.jiaoyimao.com/youxi/")
+		_ = c.Visit("https://www.jiaoyimao.com/youxi/")
 	}
 }
 
@@ -72,7 +73,7 @@ func gameDetail(url, title *string) {
 			orm.Gorm.Create(&maoGamesGoodsDetail)
 		}
 	})
-	c.Visit(*url)
+	_ = c.Visit(*url)
 }
 
 //获取游戏下每个商品的销量情况
@@ -247,7 +248,6 @@ and mao_games_goods_detail.goods_count < 100 and mao_games_goods_detail.price >=
 group by mao_games.game_id
 order by stc desc
 `)
-		defer rows.Close()
 		if err != nil {
 			log.Println("select stc err")
 			break
@@ -262,7 +262,7 @@ order by stc desc
 			maoGamesStc.CreateDatetime = time.Now().Add(time.Hour * 1).Format("2006-01-02 15:00:00")
 			orm.Gorm.Create(&maoGamesStc)
 		}
-		time.Sleep(time.Minute * 2)
+		_ = rows.Close()
 	}
 }
 
