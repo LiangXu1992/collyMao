@@ -1,10 +1,13 @@
 package Schedules
 
 import (
+	"bytes"
 	"collyMao/app/Models"
 	"collyMao/orm"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
+	"github.com/sgoby/opencc"
 	"log"
 	"math/rand"
 	"regexp"
@@ -356,16 +359,150 @@ func getSellerName(goodsUrl string) (sellerName string, sellerType int64) {
 			sellerType = 2
 		}
 	})
-	c.Visit(strings.Replace(goodsUrl, "https://www.", "https://m.", 1))
+	_ = c.Visit(strings.Replace(goodsUrl, "https://www.", "https://m.", 1))
 	return
+}
+
+var starMap = map[string]string{
+	"1":  "白羊座",
+	"2":  "金牛座",
+	"3":  "双子座",
+	"4":  "巨蟹座",
+	"5":  "狮子座",
+	"6":  "处女座",
+	"7":  "天秤座",
+	"8":  "天蝎座",
+	"9":  "射手座",
+	"10": "摩羯座",
+	"11": "水瓶座",
+	"12": "双鱼座",
+}
+
+var starEnglishMap = map[string]string{
+	"白羊座": "aries",
+	"金牛座": "taurus",
+	"双子座": "gemini",
+	"巨蟹座": "cancer",
+	"狮子座": "leo",
+	"处女座": "virgo",
+	"天秤座": "libra",
+	"天蝎座": "scorpio",
+	"射手座": "sagittarius",
+	"摩羯座": "capricorn",
+	"水瓶座": "aquarius",
+	"双鱼座": "pisces",
+}
+
+type scopeDetail struct {
+	BoyGirl  string
+	GirllBoy string
+	Star2    string
+}
+
+var scopeMap = map[string]map[string]scopeDetail{}
+
+// 爬取星座
+func getStarRank() {
+	var collyUrl = "https://www.8s8s.net/xingzuo/xingzuopeidui/19587.html"
+	var c = colly.NewCollector()
+	c.OnResponse(func(resp *colly.Response) {
+		htmlDoc, err := goquery.NewDocumentFromReader(bytes.NewReader(resp.Body))
+		if err != nil {
+			log.Printf("read body fail;err:%s", err.Error())
+			return
+		}
+
+		// 遍历星座map
+		for index, starName := range starMap {
+			for index2, starName2 := range starMap {
+				// 匹配分数
+				htmlElement := htmlDoc.Find(fmt.Sprintf(`a[href="/xingzuo/xingzuopeidui/xingzuo_supei_A%sB%s.htm"]`, index, index2))
+				//log.Println(fmt.Sprintf("%s(女)----%s(男);rank:%s", starName, starName2, htmlElement.Text()))
+				if _, ok := scopeMap[starName]; !ok {
+					scopeMap[starName] = map[string]scopeDetail{}
+					if _, ok2 := scopeMap[starName][starName2]; !ok2 {
+						scopeMap[starName][starName2] = scopeDetail{}
+					}
+				}
+				scopeMap[starName][starName2] = scopeDetail{
+					BoyGirl:  "0",
+					GirllBoy: htmlElement.Text(),
+					Star2:    starName2,
+				}
+				//scopeSql := "INSERT INTO xz_star_match_copy1 (first_star, second_star, boy_girl_score, girl_boy_scope) values (%s, %s, %s, %s)"
+				//fmt.Sprintf(scopeSql, starName, starName2)
+				continue
+				// 匹配详情
+				intIndex, _ := strconv.Atoi(index)
+				intIndex2, _ := strconv.Atoi(index2)
+				if intIndex > intIndex2 {
+					continue
+				}
+				detailUrl := "/xingzuo/xingzuopeidui/yuanfen_peidui_a"
+				if intIndex < 10 {
+					detailUrl = detailUrl + "0" + index
+				} else {
+					detailUrl = detailUrl + index
+				}
+				if intIndex2 < 10 {
+					detailUrl = detailUrl + "b0" + index2
+				} else {
+					detailUrl = detailUrl + "b" + index2
+				}
+				detailUrl = detailUrl + ".htm"
+				detailRes := visitStarDetail(detailUrl)
+				log.Println(fmt.Sprintf("%s----%s;content:%s", starName, starName2, detailRes))
+			}
+		}
+		for k, v := range scopeMap {
+			log.Printf("%+v----%+v", k, v)
+		}
+
+		return
+	})
+	var err = c.Visit(collyUrl)
+	if err != nil {
+		log.Printf("getStarRankFail;url:%s;err:", collyUrl, err.Error())
+		return
+	}
+}
+
+func visitStarDetail(detailUrl string) string {
+	var baseUrl = "https://www.8s8s.net"
+	// 完整url
+	fullUrl := baseUrl + detailUrl
+	var c = colly.NewCollector()
+	var content = ""
+	c.OnHTML(`div[class="xz2_text"] > p`, func(h *colly.HTMLElement) {
+		if h.Index >= 8 {
+			content = content + h.Text
+		}
+	})
+	var err = c.Visit(fullUrl)
+	if err != nil {
+		log.Printf("visitStarDetailFail;url:%s;err:", fullUrl, err.Error())
+		return ""
+	}
+	cc, err := opencc.NewOpenCC("tw2s")
+	if err != nil {
+		log.Printf("openccFail;url:%s;err:%s;", fullUrl, err.Error())
+		return content
+	}
+	nText, err := cc.ConvertText(content)
+	if err != nil {
+		log.Printf("openccFail2;url:%s;err:%s;", fullUrl, err.Error())
+		return content
+	}
+	return nText
 }
 
 var deepVisitsPage int64 = 10  //搜集多少页的数据
 var currentVisitPage int64 = 1 //当前在第几页访问
 
 func Start() {
-	go InsertGameSaleDetail()
-	go InsertGoodsCount()
-	go InsertGoodsDetail()
-	go allGameGoodsRank()
+	//go InsertGameSaleDetail()
+	//go InsertGoodsCount()
+	//go InsertGoodsDetail()
+	//go allGameGoodsRank()
+	getStarRank()
 }
